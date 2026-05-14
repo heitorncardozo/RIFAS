@@ -24,5 +24,5 @@ export type Venda = {
   rifas?: Rifa
 }
 
-export const VALOR_RIFA = 5 // R$ 5,00
-export const TOTAL_RIFAS = 800
+export const VALOR_RIFA = 10 // R$ 10,00
+export const TOTAL_RIFAS = 1250
