@@ -18,7 +18,8 @@ export type Venda = {
   id: string
   aluno_id: string
   rifa_id: string
-  comprovante_url: string
+  comprovante_url: string | null
+  forma_pagamento: 'pix' | 'dinheiro'
   created_at: string
   // Joined fields
   alunos: Aluno | null

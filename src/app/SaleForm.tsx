@@ -19,6 +19,7 @@ export default function SaleForm() {
   const [selectedTurma, setSelectedTurma] = useState('')
   const [selectedAluno, setSelectedAluno] = useState('')
   const [selectedNumeros, setSelectedNumeros] = useState<number[]>([])
+  const [formaPagamento, setFormaPagamento] = useState<'pix' | 'dinheiro'>('pix')
   const [comprovante, setComprovante] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -75,8 +76,13 @@ export default function SaleForm() {
   }, [selectedAluno, showToast])
 
   const handleSubmit = async () => {
-    if (!selectedAluno || selectedNumeros.length === 0 || !comprovante) {
-      showToast('Preencha todos os campos e selecione pelo menos uma rifa.', 'warning')
+    if (!selectedAluno || selectedNumeros.length === 0) {
+      showToast('Selecione o aluno e pelo menos uma rifa.', 'warning')
+      return
+    }
+
+    if (formaPagamento === 'pix' && !comprovante) {
+      showToast('O comprovante é obrigatório para pagamentos via PIX.', 'warning')
       return
     }
 
@@ -84,7 +90,10 @@ export default function SaleForm() {
     const formData = new FormData()
     formData.append('aluno_id', selectedAluno)
     formData.append('rifas_numeros', JSON.stringify(selectedNumeros))
-    formData.append('comprovante', comprovante)
+    formData.append('forma_pagamento', formaPagamento)
+    if (comprovante) {
+      formData.append('comprovante', comprovante)
+    }
 
     const result = await registrarVenda(formData)
 
@@ -240,16 +249,49 @@ export default function SaleForm() {
             </div>
           )}
 
-          {/* Receipt upload */}
+          {/* Payment Method select */}
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
-              📸 Comprovante de Pagamento
+            <label className="block text-sm font-semibold text-foreground mb-3">
+              💳 Forma de Pagamento
             </label>
-            <FileUpload
-              onFileSelect={handleFileSelect}
-              preview={preview}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormaPagamento('pix')}
+                className={`flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl border font-semibold transition-all cursor-pointer ${
+                  formaPagamento === 'pix'
+                    ? 'bg-primary/10 border-primary text-primary shadow-sm shadow-primary/20'
+                    : 'bg-surface border-card-border text-muted hover:border-primary/50'
+                }`}
+              >
+                <span className="text-xl">📱</span> PIX
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormaPagamento('dinheiro')}
+                className={`flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl border font-semibold transition-all cursor-pointer ${
+                  formaPagamento === 'dinheiro'
+                    ? 'bg-primary/10 border-primary text-primary shadow-sm shadow-primary/20'
+                    : 'bg-surface border-card-border text-muted hover:border-primary/50'
+                }`}
+              >
+                <span className="text-xl">💵</span> Dinheiro
+              </button>
+            </div>
           </div>
+
+          {/* Receipt upload (Show only for PIX or optional for Dinheiro) */}
+          {formaPagamento === 'pix' && (
+            <div className="animate-slide-up">
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                📸 Comprovante de Pagamento
+              </label>
+              <FileUpload
+                onFileSelect={handleFileSelect}
+                preview={preview}
+              />
+            </div>
+          )}
 
           {/* Submit */}
           <Button

@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS public.vendas (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     aluno_id UUID REFERENCES public.alunos(id) ON DELETE CASCADE NOT NULL,
     rifa_id UUID REFERENCES public.rifas(id) ON DELETE CASCADE NOT NULL,
-    comprovante_url TEXT NOT NULL,
+    comprovante_url TEXT,
+    forma_pagamento TEXT DEFAULT 'pix' NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

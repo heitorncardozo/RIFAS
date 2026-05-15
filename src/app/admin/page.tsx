@@ -282,6 +282,9 @@ function DashboardContent() {
                         Data
                       </th>
                       <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider">
+                        Pagamento
+                      </th>
+                      <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider">
                         Comprovante
                       </th>
                       <th className="text-right px-5 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider">
@@ -292,7 +295,7 @@ function DashboardContent() {
                   <tbody>
                     {filteredVendas.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-5 py-12 text-center text-muted">
+                        <td colSpan={7} className="px-5 py-12 text-center text-muted">
                           <div className="text-4xl mb-2">📭</div>
                           <p>Nenhuma venda encontrada</p>
                         </td>
@@ -324,15 +327,28 @@ function DashboardContent() {
                             })}
                           </td>
                           <td className="px-5 py-4">
-                            <button
-                              onClick={() => {
-                                setSelectedImage(v.comprovante_url)
-                                setShowImageModal(true)
-                              }}
-                              className="text-primary hover:text-primary-dark text-sm font-medium transition-colors cursor-pointer"
-                            >
-                              📷 Ver
-                            </button>
+                            <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
+                              v.forma_pagamento === 'pix' 
+                                ? 'bg-primary/10 text-primary' 
+                                : 'bg-success/10 text-success'
+                            }`}>
+                              {v.forma_pagamento || 'pix'}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4">
+                            {v.comprovante_url ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedImage(v.comprovante_url!)
+                                  setShowImageModal(true)
+                                }}
+                                className="text-primary hover:text-primary-dark text-sm font-medium transition-colors cursor-pointer"
+                              >
+                                📷 Ver
+                              </button>
+                            ) : (
+                              <span className="text-muted text-xs">—</span>
+                            )}
                           </td>
                           <td className="px-5 py-4 text-right">
                             <button

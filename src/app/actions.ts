@@ -8,6 +8,7 @@ export async function registrarVenda(formData: FormData) {
   const alunoId = formData.get('aluno_id') as string
   const rifasNumerosStr = formData.get('rifas_numeros') as string
   const comprovante = formData.get('comprovante') as File
+  const formaPagamento = (formData.get('forma_pagamento') as string) || 'pix'
 
   let rifasNumeros: number[] = []
   try {
@@ -17,16 +18,21 @@ export async function registrarVenda(formData: FormData) {
   }
 
   // Validate inputs
-  if (!alunoId || !rifasNumeros || rifasNumeros.length === 0 || !comprovante) {
+  if (!alunoId || !rifasNumeros || rifasNumeros.length === 0) {
     return { error: 'Todos os campos são obrigatórios e você deve selecionar ao menos uma rifa.' }
   }
 
-  if (!comprovante.type.startsWith('image/')) {
-    return { error: 'O comprovante deve ser uma imagem.' }
-  }
-
-  if (comprovante.size > 5 * 1024 * 1024) {
-    return { error: 'O comprovante deve ter no máximo 5MB.' }
+  // Comprovante é obrigatório apenas para PIX
+  if (formaPagamento === 'pix') {
+    if (!comprovante || comprovante.size === 0) {
+      return { error: 'O comprovante é obrigatório para pagamentos via PIX.' }
+    }
+    if (!comprovante.type.startsWith('image/')) {
+      return { error: 'O comprovante deve ser uma imagem.' }
+    }
+    if (comprovante.size > 5 * 1024 * 1024) {
+      return { error: 'O comprovante deve ter no máximo 5MB.' }
+    }
   }
 
   try {
@@ -45,25 +51,31 @@ export async function registrarVenda(formData: FormData) {
       return { error: `Algumas rifas já foram vendidas: ${jaVendidas.map(r => r.numero).join(', ')}. Atualize a página.` }
     }
 
-    // 2. Upload the receipt image
-    const fileExt = comprovante.name.split('.').pop()
-    const fileName = `batch_venda_${alunoId}_${Date.now()}.${fileExt}`
+    let publicUrl = null
 
-    const { error: uploadError } = await supabase.storage
-      .from('comprovantes')
-      .upload(fileName, comprovante, {
-        cacheControl: '3600',
-        upsert: false,
-      })
+    // 2. Upload the receipt image if provided
+    if (formaPagamento === 'pix' && comprovante && comprovante.size > 0) {
+      const fileExt = comprovante.name.split('.').pop()
+      const fileName = `batch_venda_${alunoId}_${Date.now()}.${fileExt}`
 
-    if (uploadError) {
-      return { error: 'Erro ao fazer upload do comprovante. Tente novamente.' }
+      const { error: uploadError } = await supabase.storage
+        .from('comprovantes')
+        .upload(fileName, comprovante, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (uploadError) {
+        return { error: 'Erro ao fazer upload do comprovante. Tente novamente.' }
+      }
+
+      // 3. Get public URL
+      const { data: urlData } = supabase.storage
+        .from('comprovantes')
+        .getPublicUrl(fileName)
+      
+      publicUrl = urlData.publicUrl
     }
-
-    // 3. Get public URL
-    const { data: urlData } = supabase.storage
-      .from('comprovantes')
-      .getPublicUrl(fileName)
 
     // 4. Mark rifas as sold
     const rifasIds = rifas.map(r => r.id)
@@ -81,7 +93,8 @@ export async function registrarVenda(formData: FormData) {
     const vendasToInsert = rifas.map(r => ({
       aluno_id: alunoId,
       rifa_id: r.id,
-      comprovante_url: urlData.publicUrl,
+      comprovante_url: publicUrl,
+      forma_pagamento: formaPagamento,
     }))
 
     const { error: vendaError } = await supabase
