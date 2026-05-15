@@ -34,6 +34,9 @@ function DashboardContent() {
   const [atribuirFim, setAtribuirFim] = useState('')
   const [atribuindo, setAtribuindo] = useState(false)
 
+  const [selectedAlunoDetails, setSelectedAlunoDetails] = useState<Aluno | null>(null)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
+
   // Filters
   const [filterAluno, setFilterAluno] = useState('')
   const [filterSearch, setFilterSearch] = useState('')
@@ -427,6 +430,15 @@ function DashboardContent() {
                     </div>
                     <button
                       onClick={() => {
+                        setSelectedAlunoDetails(a)
+                        setShowDetailsModal(true)
+                      }}
+                      className="px-3 py-1.5 bg-surface hover:bg-primary/5 text-muted hover:text-primary text-xs rounded-lg font-semibold transition-colors cursor-pointer border border-card-border flex-shrink-0"
+                    >
+                      📊 Detalhes
+                    </button>
+                    <button
+                      onClick={() => {
                         setAtribuirAlunoId(a.id)
                         setShowAtribuirModal(true)
                       }}
@@ -559,6 +571,87 @@ function DashboardContent() {
           >
             Confirmar Atribuição
           </Button>
+        </div>
+      </Modal>
+
+      {/* Student Details Modal */}
+      <Modal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        title={`Desempenho: ${selectedAlunoDetails?.nome}`}
+        maxWidth="max-w-3xl"
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-surface/50 rounded-2xl p-4 border border-card-border">
+              <p className="text-xs text-muted uppercase font-bold tracking-wider mb-1">Vendidas</p>
+              <p className="text-2xl font-black text-success">
+                {selectedAlunoDetails?.rifas?.filter(r => r.vendido).length || 0}
+              </p>
+            </div>
+            <div className="bg-surface/50 rounded-2xl p-4 border border-card-border">
+              <p className="text-xs text-muted uppercase font-bold tracking-wider mb-1">Pendentes</p>
+              <p className="text-2xl font-black text-warning">
+                {selectedAlunoDetails?.rifas?.filter(r => !r.vendido).length || 0}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Sold List */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-success"></span>
+                Rifas Vendidas
+              </h3>
+              <div className="bg-surface/30 rounded-xl p-3 border border-card-border min-h-[100px] max-h-[300px] overflow-y-auto">
+                {selectedAlunoDetails?.rifas?.filter(r => r.vendido).length === 0 ? (
+                  <p className="text-xs text-muted text-center py-8">Nenhuma rifa vendida ainda.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAlunoDetails?.rifas
+                      ?.filter(r => r.vendido)
+                      .sort((a, b) => a.numero - b.numero)
+                      .map(r => (
+                        <span key={r.id} className="inline-flex items-center justify-center w-10 h-7 rounded bg-success/10 text-success text-xs font-bold border border-success/20">
+                          {String(r.numero).padStart(3, '0')}
+                        </span>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Pending List */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-warning"></span>
+                Rifas Pendentes
+              </h3>
+              <div className="bg-surface/30 rounded-xl p-3 border border-card-border min-h-[100px] max-h-[300px] overflow-y-auto">
+                {selectedAlunoDetails?.rifas?.filter(r => !r.vendido).length === 0 ? (
+                  <p className="text-xs text-muted text-center py-8">Todas as rifas atribuídas foram vendidas!</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAlunoDetails?.rifas
+                      ?.filter(r => !r.vendido)
+                      .sort((a, b) => a.numero - b.numero)
+                      .map(r => (
+                        <span key={r.id} className="inline-flex items-center justify-center w-10 h-7 rounded bg-warning/10 text-warning text-xs font-bold border border-warning/20">
+                          {String(r.numero).padStart(3, '0')}
+                        </span>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="pt-2">
+            <Button variant="ghost" onClick={() => setShowDetailsModal(false)} className="w-full">
+              Fechar
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

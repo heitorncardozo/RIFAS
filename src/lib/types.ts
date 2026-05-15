@@ -3,7 +3,7 @@ export type Aluno = {
   nome: string
   turma: string
   created_at: string
-  rifas?: { id: string }[]
+  rifas?: Rifa[]
 }
 
 export type Rifa = {
