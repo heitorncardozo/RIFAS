@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import { ToastProvider, useToast } from '@/components/ui/Toast'
 import { getDashboardData, adicionarAluno, removerAluno, cancelarVenda, adminLogout, atribuirRifas } from './actions'
-import { VALOR_RIFA } from '@/lib/types'
+import { VALOR_RIFA, TOTAL_RIFAS } from '@/lib/types'
 import type { Aluno, Venda } from '@/lib/types'
 
 function DashboardContent() {
@@ -43,8 +43,8 @@ function DashboardContent() {
     setLoading(true)
     const data = await getDashboardData()
     setStats(data.stats)
-    setVendas(data.vendas as Venda[])
-    setAlunos(data.alunos as Aluno[])
+    setVendas(data.vendas as unknown as Venda[])
+    setAlunos(data.alunos as unknown as Aluno[])
     setLoading(false)
   }, [])
 
@@ -406,7 +406,7 @@ function DashboardContent() {
                   
                   <div className="flex items-center gap-3">
                     <div className="text-right mr-2 hidden sm:block">
-                      <p className="font-semibold text-foreground text-xs">{(a as any).rifas?.length || 0}</p>
+                      <p className="font-semibold text-foreground text-xs">{a.rifas?.length || 0}</p>
                       <p className="text-[10px] text-muted">rifas</p>
                     </div>
                     <button
@@ -514,7 +514,7 @@ function DashboardContent() {
               <input
                 type="number"
                 min="1"
-                max="800"
+                max={TOTAL_RIFAS}
                 value={atribuirInicio}
                 onChange={(e) => setAtribuirInicio(e.target.value)}
                 placeholder="Ex: 1"
@@ -528,7 +528,7 @@ function DashboardContent() {
               <input
                 type="number"
                 min="1"
-                max="800"
+                max={TOTAL_RIFAS}
                 value={atribuirFim}
                 onChange={(e) => setAtribuirFim(e.target.value)}
                 placeholder="Ex: 50"

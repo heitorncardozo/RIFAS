@@ -3,6 +3,7 @@ export type Aluno = {
   nome: string
   turma: string
   created_at: string
+  rifas?: { id: string }[]
 }
 
 export type Rifa = {
@@ -20,8 +21,8 @@ export type Venda = {
   comprovante_url: string
   created_at: string
   // Joined fields
-  alunos?: Aluno
-  rifas?: Rifa
+  alunos: Aluno | null
+  rifas: Rifa | null
 }
 
 export const VALOR_RIFA = 10 // R$ 10,00

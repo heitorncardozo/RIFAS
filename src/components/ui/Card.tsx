@@ -1,5 +1,3 @@
-'use client'
-
 import { ReactNode } from 'react'
 
 interface CardProps {
@@ -21,7 +19,7 @@ export default function Card({
   className = '',
   children,
 }: CardProps) {
-  if (children) {
+  if (children !== undefined && children !== null) {
     return (
       <div
         className={`rounded-2xl bg-card-bg border border-card-border p-6 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${className}`}
