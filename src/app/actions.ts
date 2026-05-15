@@ -106,6 +106,7 @@ export async function getAlunos() {
     .from('alunos')
     .select('*')
     .order('nome')
+    .limit(500)
 
   if (error) return { error: 'Erro ao carregar alunos.' }
   return { data }
@@ -117,6 +118,7 @@ export async function getRifasDisponiveis() {
     .from('rifas')
     .select('numero, vendido, aluno_id')
     .order('numero')
+    .limit(2000)
 
   if (error) return { error: 'Erro ao carregar rifas.' }
   return { data }

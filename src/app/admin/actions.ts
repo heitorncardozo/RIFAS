@@ -20,7 +20,7 @@ export async function getDashboardData() {
       .select('*, alunos(*), rifas(*)')
       .order('created_at', { ascending: false })
       .limit(100),
-    supabase.from('alunos').select('*, rifas(id)').order('nome'),
+    supabase.from('alunos').select('*, rifas(id)').order('nome').limit(500),
   ])
 
   if (vendasError || alunosError) {
