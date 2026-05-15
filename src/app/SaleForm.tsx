@@ -81,8 +81,9 @@ export default function SaleForm() {
       return
     }
 
-    if (formaPagamento === 'pix' && !comprovante) {
-      showToast('O comprovante é obrigatório para pagamentos via PIX.', 'warning')
+    if (!comprovante) {
+      const msg = formaPagamento === 'pix' ? 'O comprovante é obrigatório para pagamentos via PIX.' : 'A foto do dinheiro é obrigatória para pagamentos em dinheiro.'
+      showToast(msg, 'warning')
       return
     }
 
@@ -280,18 +281,16 @@ export default function SaleForm() {
             </div>
           </div>
 
-          {/* Receipt upload (Show only for PIX or optional for Dinheiro) */}
-          {formaPagamento === 'pix' && (
-            <div className="animate-slide-up">
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                📸 Comprovante de Pagamento
-              </label>
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                preview={preview}
-              />
-            </div>
-          )}
+          {/* Receipt upload (Always mandatory now) */}
+          <div className="animate-slide-up">
+            <label className="block text-sm font-semibold text-foreground mb-2">
+              📸 {formaPagamento === 'pix' ? 'Comprovante de Pagamento' : 'Foto do Dinheiro'}
+            </label>
+            <FileUpload
+              onFileSelect={handleFileSelect}
+              preview={preview}
+            />
+          </div>
 
           {/* Submit */}
           <Button

@@ -22,17 +22,18 @@ export async function registrarVenda(formData: FormData) {
     return { error: 'Todos os campos são obrigatórios e você deve selecionar ao menos uma rifa.' }
   }
 
-  // Comprovante é obrigatório apenas para PIX
-  if (formaPagamento === 'pix') {
-    if (!comprovante || comprovante.size === 0) {
-      return { error: 'O comprovante é obrigatório para pagamentos via PIX.' }
-    }
-    if (!comprovante.type.startsWith('image/')) {
-      return { error: 'O comprovante deve ser uma imagem.' }
-    }
-    if (comprovante.size > 5 * 1024 * 1024) {
-      return { error: 'O comprovante deve ter no máximo 5MB.' }
-    }
+  // Comprovante é obrigatório para todas as formas de pagamento
+  if (!comprovante || comprovante.size === 0) {
+    const msg = formaPagamento === 'pix' ? 'O comprovante é obrigatório para pagamentos via PIX.' : 'A foto do dinheiro é obrigatória para pagamentos em dinheiro.'
+    return { error: msg }
+  }
+
+  if (!comprovante.type.startsWith('image/')) {
+    return { error: 'O comprovante deve ser uma imagem.' }
+  }
+
+  if (comprovante.size > 5 * 1024 * 1024) {
+    return { error: 'O comprovante deve ter no máximo 5MB.' }
   }
 
   try {
@@ -54,7 +55,7 @@ export async function registrarVenda(formData: FormData) {
     let publicUrl = null
 
     // 2. Upload the receipt image if provided
-    if (formaPagamento === 'pix' && comprovante && comprovante.size > 0) {
+    if (comprovante && comprovante.size > 0) {
       const fileExt = comprovante.name.split('.').pop()
       const fileName = `batch_venda_${alunoId}_${Date.now()}.${fileExt}`
 
