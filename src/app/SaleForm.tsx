@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Button from '@/components/ui/Button'
 import FileUpload from '@/components/ui/FileUpload'
 import { useToast } from '@/components/ui/Toast'
-import { registrarVenda, getAlunos, getRifasDisponiveis, getEstatisticas } from './actions'
+import { registrarVenda, getAlunos, getRifasDisponiveis, getEstatisticas, getRifasDoAluno } from './actions'
 import type { Aluno } from '@/lib/types'
 import { VALOR_RIFA, TOTAL_RIFAS } from '@/lib/types'
 
@@ -23,17 +23,16 @@ export default function SaleForm() {
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
+  const [loadingRifas, setLoadingRifas] = useState(false)
   const [success, setSuccess] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoadingData(true)
-    const [alunosRes, rifasRes, statsRes] = await Promise.all([
+    const [alunosRes, statsRes] = await Promise.all([
       getAlunos(),
-      getRifasDisponiveis(),
       getEstatisticas(),
     ])
     if (alunosRes.data) setAlunos(alunosRes.data)
-    if (rifasRes.data) setRifas(rifasRes.data)
     setStats(statsRes)
     setLoadingData(false)
   }, [])
@@ -55,7 +54,25 @@ export default function SaleForm() {
 
   useEffect(() => {
     setSelectedNumeros([])
-  }, [selectedAluno])
+    
+    async function fetchRifas() {
+      if (!selectedAluno) {
+        setRifas([])
+        return
+      }
+      
+      setLoadingRifas(true)
+      const res = await getRifasDoAluno(selectedAluno)
+      if (res.data) {
+        setRifas(res.data as RifaStatus[])
+      } else if (res.error) {
+        showToast(res.error, 'error')
+      }
+      setLoadingRifas(false)
+    }
+    
+    fetchRifas()
+  }, [selectedAluno, showToast])
 
   const handleSubmit = async () => {
     if (!selectedAluno || selectedNumeros.length === 0 || !comprovante) {
@@ -185,7 +202,12 @@ export default function SaleForm() {
                   {selectedNumeros.length} selecionados
                 </span>
               </div>
-              <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-64 overflow-y-auto p-2 bg-surface border border-card-border rounded-xl">
+              <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-64 overflow-y-auto p-2 bg-surface border border-card-border rounded-xl relative min-h-[100px]">
+                {loadingRifas && (
+                  <div className="absolute inset-0 bg-surface/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
                 {disponiveisNumbers.map((n) => {
                   const isSelected = selectedNumeros.includes(n)
                   return (

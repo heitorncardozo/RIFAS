@@ -124,6 +124,22 @@ export async function getRifasDisponiveis() {
   return { data }
 }
 
+export async function getRifasDoAluno(alunoId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('rifas')
+    .select('numero, vendido, aluno_id')
+    .eq('aluno_id', alunoId)
+    .eq('vendido', false)
+    .order('numero')
+
+  if (error) {
+    console.error('Erro ao carregar rifas do aluno:', error)
+    return { error: 'Erro ao carregar rifas do aluno.' }
+  }
+  return { data: data || [] }
+}
+
 export async function getEstatisticas() {
   const supabase = await createClient()
 
