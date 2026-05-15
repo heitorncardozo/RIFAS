@@ -10,8 +10,8 @@ export async function getDashboardData() {
   const [
     { count: totalVendidas },
     { count: totalRifas },
-    { data: vendas },
-    { data: alunos },
+    { data: vendas, error: vendasError },
+    { data: alunos, error: alunosError },
   ] = await Promise.all([
     supabase.from('rifas').select('*', { count: 'exact', head: true }).eq('vendido', true),
     supabase.from('rifas').select('*', { count: 'exact', head: true }),
@@ -23,6 +23,15 @@ export async function getDashboardData() {
     supabase.from('alunos').select('*, rifas(id)').order('nome'),
   ])
 
+  if (vendasError || alunosError) {
+    console.error('Erro ao buscar dados do dashboard:', { vendasError, alunosError })
+    return {
+      stats: { vendidas: totalVendidas || 0, total: totalRifas || 0, disponiveis: 0, arrecadado: 0 },
+      vendas: [],
+      alunos: [],
+    }
+  }
+
   const sold = totalVendidas || 0
   const total = totalRifas || 0
 
@@ -33,8 +42,8 @@ export async function getDashboardData() {
       disponiveis: total - sold,
       arrecadado: sold * VALOR_RIFA,
     },
-    vendas: vendas || [],
-    alunos: alunos || [],
+    vendas: (vendas as any) || [],
+    alunos: (alunos as any) || [],
   }
 }
 
@@ -120,12 +129,22 @@ export async function atribuirRifas(formData: FormData) {
     return { error: 'Não é possível atribuir, pois algumas rifas neste intervalo já foram vendidas.' }
   }
 
-  const { error } = await supabase
+  const { data, error, count } = await supabase
     .from('rifas')
-    .update({ aluno_id: alunoId })
+    .update({ aluno_id: alunoId }, { count: 'exact' })
     .gte('numero', inicio)
     .lte('numero', fim)
+    .select()
 
-  if (error) return { error: 'Erro ao atribuir as rifas. Tente novamente.' }
+  if (error) {
+    console.error('Erro ao atribuir rifas:', error)
+    return { error: 'Erro ao atribuir as rifas: ' + error.message }
+  }
+
+  if (!count || count === 0) {
+    return { error: `Nenhuma rifa encontrada no intervalo de ${inicio} a ${fim}. Verifique se os números já foram criados no banco.` }
+  }
+
+  console.log(`Sucesso: ${count} rifas atribuídas ao aluno ${alunoId}`)
   return { success: true }
 }

@@ -73,7 +73,8 @@ export async function registrarVenda(formData: FormData) {
       .in('id', rifasIds)
 
     if (updateError) {
-      return { error: 'Erro ao atualizar rifas. Tente novamente.' }
+      console.error('Erro ao atualizar rifas:', updateError)
+      return { error: `Erro ao atualizar rifas: ${updateError.message}` }
     }
 
     // 5. Create multiple sale records
@@ -88,9 +89,11 @@ export async function registrarVenda(formData: FormData) {
       .insert(vendasToInsert)
 
     if (vendaError) {
-      return { error: 'Erro ao registrar venda. Tente novamente.' }
+      console.error('Erro ao inserir venda:', vendaError)
+      return { error: `Erro ao registrar venda: ${vendaError.message}` }
     }
 
+    console.log('Venda registrada com sucesso para:', alunoId)
     return { success: true, numeros: rifas.map(r => r.numero).join(', ') }
   } catch {
     return { error: 'Erro inesperado. Tente novamente.' }
