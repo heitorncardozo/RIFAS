@@ -6,7 +6,7 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import { ToastProvider, useToast } from '@/components/ui/Toast'
-import { getDashboardData, adicionarAluno, removerAluno, cancelarVenda, adminLogout, atribuirRifas } from './actions'
+import { getDashboardData, adicionarAluno, removerAluno, cancelarVenda, adminLogout, atribuirRifas, atualizarFormaPagamento } from './actions'
 import { VALOR_RIFA, TOTAL_RIFAS } from '@/lib/types'
 import type { Aluno, Venda } from '@/lib/types'
 
@@ -14,7 +14,7 @@ function DashboardContent() {
   const router = useRouter()
   const { showToast } = useToast()
 
-  const [stats, setStats] = useState({ vendidas: 0, total: 0, disponiveis: 0, arrecadado: 0 })
+  const [stats, setStats] = useState({ vendidas: 0, total: 0, disponiveis: 0, arrecadado: 0, arrecadadoPix: 0, arrecadadoDinheiro: 0 })
   const [vendas, setVendas] = useState<Venda[]>([])
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [loading, setLoading] = useState(true)
@@ -119,13 +119,24 @@ function DashboardContent() {
     }
   }
 
+  const handleUpdatePagamento = async (vendaId: string, formaAtual: 'pix' | 'dinheiro') => {
+    const novaForma = formaAtual === 'pix' ? 'dinheiro' : 'pix'
+    const result = await atualizarFormaPagamento(vendaId, novaForma)
+    if (result.error) {
+      showToast(result.error, 'error')
+    } else {
+      showToast(`Pagamento alterado para ${novaForma.toUpperCase()}`, 'success')
+      await loadData()
+    }
+  }
+
   // Filtered vendas
   const filteredVendas = vendas.filter((v) => {
     if (filterAluno && v.alunos?.id !== filterAluno) return false
     if (filterSearch) {
       const search = filterSearch.toLowerCase()
-      const matchNome = v.alunos?.nome?.toLowerCase().includes(search)
-      const matchNumero = v.rifas?.numero?.toString().includes(search)
+      const matchNome = v.alunos?.nome?.toLowerCase()?.includes(search)
+      const matchNumero = v.rifas?.numero?.toString()?.includes(search)
       if (!matchNome && !matchNumero) return false
     }
     return true
@@ -171,7 +182,7 @@ function DashboardContent() {
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 animate-fade-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 animate-fade-in">
           <Card
             title="Rifas Vendidas"
             value={stats.vendidas}
@@ -187,11 +198,18 @@ function DashboardContent() {
             gradient="bg-gradient-to-br from-accent to-cyan-700"
           />
           <Card
-            title="Arrecadado"
+            title="Arrecadado Total"
             value={`R$ ${stats.arrecadado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-            subtitle={`× R$ ${VALOR_RIFA.toFixed(2).replace('.', ',')} cada`}
+            subtitle="Soma de todos"
             icon={<span>💰</span>}
             gradient="bg-gradient-to-br from-success to-emerald-700"
+          />
+          <Card
+            title="Vendas em Dinheiro"
+            value={`R$ ${stats.arrecadadoDinheiro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            subtitle="Valor em espécie"
+            icon={<span>💵</span>}
+            gradient="bg-gradient-to-br from-emerald-500 to-teal-700"
           />
           <Card
             title="Progresso"
@@ -330,13 +348,17 @@ function DashboardContent() {
                             })}
                           </td>
                           <td className="px-5 py-4">
-                            <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
-                              v.forma_pagamento === 'pix' 
-                                ? 'bg-primary/10 text-primary' 
-                                : 'bg-success/10 text-success'
-                            }`}>
-                              {v.forma_pagamento || 'pix'}
-                            </span>
+                            <button
+                              onClick={() => handleUpdatePagamento(v.id, v.forma_pagamento || 'pix')}
+                              className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                                v.forma_pagamento === 'pix' 
+                                  ? 'bg-primary/10 text-primary border border-primary/20' 
+                                  : 'bg-success/10 text-success border border-success/20'
+                              }`}
+                              title="Clique para alternar forma de pagamento"
+                            >
+                              {v.forma_pagamento || 'pix'} 🔄
+                            </button>
                           </td>
                           <td className="px-5 py-4">
                             {v.comprovante_url ? (

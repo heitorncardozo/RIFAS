@@ -26,7 +26,7 @@ export async function getDashboardData() {
   if (vendasError || alunosError) {
     console.error('Erro ao buscar dados do dashboard:', { vendasError, alunosError })
     return {
-      stats: { vendidas: totalVendidas || 0, total: totalRifas || 0, disponiveis: 0, arrecadado: 0 },
+      stats: { vendidas: totalVendidas || 0, total: totalRifas || 0, disponiveis: 0, arrecadado: 0, arrecadadoPix: 0, arrecadadoDinheiro: 0 },
       vendas: [],
       alunos: [],
     }
@@ -35,16 +35,35 @@ export async function getDashboardData() {
   const sold = totalVendidas || 0
   const total = totalRifas || 0
 
+  // Calcula totais por forma de pagamento
+  const { data: allSales } = await supabase.from('vendas').select('forma_pagamento')
+  const totalPix = allSales?.filter(s => s.forma_pagamento === 'pix').length || 0
+  const totalDinheiro = allSales?.filter(s => s.forma_pagamento === 'dinheiro').length || 0
+
   return {
     stats: {
       vendidas: sold,
       total,
       disponiveis: total - sold,
       arrecadado: sold * VALOR_RIFA,
+      arrecadadoPix: totalPix * VALOR_RIFA,
+      arrecadadoDinheiro: totalDinheiro * VALOR_RIFA,
     },
     vendas: (vendas as any) || [],
     alunos: (alunos as any) || [],
   }
+}
+
+export async function atualizarFormaPagamento(vendaId: string, novaForma: 'pix' | 'dinheiro') {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('vendas')
+    .update({ forma_pagamento: novaForma })
+    .eq('id', vendaId)
+
+  if (error) return { error: 'Erro ao atualizar forma de pagamento.' }
+  return { success: true }
 }
 
 export async function adicionarAluno(formData: FormData) {
