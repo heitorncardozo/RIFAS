@@ -18,7 +18,13 @@ function DashboardContent() {
   const [vendas, setVendas] = useState<Venda[]>([])
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'vendas' | 'alunos'>('vendas')
+  const [activeTab, setActiveTab] = useState<'vendas' | 'alunos' | 'concluidos'>('vendas')
+
+  // Alunos que já venderam todas as rifas atribuídas (Metas Fechadas)
+  const totalAlunosComRifas = alunos.filter(a => a.rifas && a.rifas.length > 0).length
+  const alunosConcluidos = alunos.filter(
+    a => a.rifas && a.rifas.length > 0 && a.rifas.every(r => r.vendido)
+  )
 
   // Modals
   const [showImageModal, setShowImageModal] = useState(false)
@@ -182,7 +188,7 @@ function DashboardContent() {
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 animate-fade-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 animate-fade-in">
           <Card
             title="Rifas Vendidas"
             value={stats.vendidas}
@@ -217,6 +223,13 @@ function DashboardContent() {
             subtitle="do total vendido"
             icon={<span>📊</span>}
             gradient="bg-gradient-to-br from-warning to-amber-700"
+          />
+          <Card
+            title="Metas Concluídas"
+            value={alunosConcluidos.length}
+            subtitle={`de ${totalAlunosComRifas} com rifas`}
+            icon={<span>🏆</span>}
+            gradient="bg-gradient-to-br from-amber-500 to-yellow-600"
           />
         </div>
 
@@ -255,6 +268,16 @@ function DashboardContent() {
             }`}
           >
             👥 Alunos ({alunos.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('concluidos')}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
+              activeTab === 'concluidos'
+                ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                : 'bg-surface text-muted hover:text-foreground'
+            }`}
+          >
+            🏆 Concluídos ({alunosConcluidos.length})
           </button>
         </div>
 
@@ -440,7 +463,14 @@ function DashboardContent() {
                       {a.nome.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground text-sm">{a.nome}</p>
+                      <p className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+                        {a.nome}
+                        {a.rifas && a.rifas.length > 0 && a.rifas.every(r => r.vendido) && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/25 rounded-md animate-pulse">
+                            👑 100%
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-muted">{a.turma}</p>
                     </div>
                   </div>
@@ -482,6 +512,94 @@ function DashboardContent() {
                 <div className="col-span-full text-center py-12 text-muted">
                   <div className="text-4xl mb-2">👥</div>
                   <p>Nenhum aluno encontrado nesta turma.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Concluintes Tab */}
+        {activeTab === 'concluidos' && (
+          <div className="space-y-4 animate-fade-in">
+            <div className="flex justify-between items-center flex-wrap gap-4">
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setFilterTurmaAluno('')}
+                  className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                    !filterTurmaAluno
+                      ? 'bg-primary text-white shadow-md shadow-primary/20'
+                      : 'bg-surface text-muted hover:text-foreground border border-card-border'
+                  }`}
+                >
+                  Todas
+                </button>
+                {Array.from(new Set(alunosConcluidos.map(a => a.turma))).sort().map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setFilterTurmaAluno(t)}
+                    className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                      filterTurmaAluno === t
+                        ? 'bg-primary text-white shadow-md shadow-primary/20'
+                        : 'bg-surface text-muted hover:text-foreground border border-card-border'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {alunosConcluidos
+                .filter(a => !filterTurmaAluno || a.turma === filterTurmaAluno)
+                .map((a) => (
+                <div
+                  key={a.id}
+                  className="bg-card-bg border border-amber-500/20 rounded-2xl p-5 flex items-center justify-between hover:shadow-lg hover:shadow-amber-500/5 transition-all relative overflow-hidden group"
+                >
+                  {/* Subtle golden corner glow */}
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-2xl rounded-full pointer-events-none" />
+                  
+                  <div className="flex items-center gap-3 relative">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-lg font-bold text-amber-500 ring-2 ring-amber-500/20">
+                      🏆
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+                        {a.nome}
+                        <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/25 rounded-md animate-pulse">
+                          100%
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted">{a.turma}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 relative">
+                    <div className="text-right mr-2">
+                      <p className="font-bold text-success text-sm">{a.rifas?.length || 0}</p>
+                      <p className="text-[10px] text-muted font-medium">rifas vendidas</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedAlunoDetails(a)
+                        setShowDetailsModal(true)
+                      }}
+                      className="px-3 py-1.5 bg-surface hover:bg-amber-500/10 text-muted hover:text-amber-500 text-xs rounded-lg font-semibold transition-colors cursor-pointer border border-card-border flex-shrink-0"
+                    >
+                      📊 Detalhes
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {alunosConcluidos.filter(a => !filterTurmaAluno || a.turma === filterTurmaAluno).length === 0 && (
+                <div className="col-span-full text-center py-16 bg-card-bg border border-dashed border-card-border rounded-2xl">
+                  <div className="text-5xl mb-4 animate-bounce">🏆</div>
+                  <h3 className="text-lg font-bold text-foreground mb-1">Nenhum aluno concluído ainda</h3>
+                  <p className="text-sm text-muted max-w-sm mx-auto">
+                    Incentive os alunos a venderem todas as suas rifas atribuídas para atingirem a meta de 100%! 🚀
+                  </p>
                 </div>
               )}
             </div>
